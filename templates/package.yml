@@ -1,0 +1,64 @@
+# ============================================================================
+spec:
+  inputs:
+
+    chart_dir:
+      description:  See templates/pipeline.yml
+      type: string
+      default: .
+
+    helm_dependencies:
+      description:  See templates/pipeline.yml
+      type: array
+      default: []
+
+    stage:
+      description:  See templates/pipeline.yml
+      type: string
+      default: build
+
+    needs:
+      description:  See templates/pipeline.yml
+      type: array
+      default: []
+
+    job_image:
+      description:  The image to use for this Job.  **Requires Bash**
+      type: string
+      default: $CI_REGISTRY_IMAGE:main
+
+    job_name_prefix:
+      description: Optional prefix for this Job's name
+      type: string
+      default: ''
+
+    job_name_suffix:
+      description: Optional suffix for this Job's name
+      type: string
+      default: ''
+
+
+---
+
+
+# ============================================================================
+include:
+  - project: kerrys-learning-lab/devsecops/cicd-catalog/cicd-tools
+    ref: release/0.1
+    file:
+      - stages.gitlab-ci.yml
+
+  - local: .jobs.gitlab-ci.yml
+
+
+# ----------------------------------------------------------------------------
+"$[[ inputs.job_name_prefix ]]helm package$[[ inputs.job_name_suffix ]]":
+  image: $[[ inputs.job_image ]]
+  extends: .helm-package
+  stage: $[[ inputs.stage ]]
+  variables:
+    HELM_CHART_DIR: $[[ inputs.chart_dir ]]
+    COMPONENT_INPUT_HELM_DEPENDENCIES: "'$[[ inputs.helm_dependencies ]]'"
+  needs:
+    - pipeline version
+    - $[[ inputs.needs ]]

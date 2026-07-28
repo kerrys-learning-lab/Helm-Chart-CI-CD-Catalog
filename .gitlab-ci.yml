@@ -1,0 +1,22 @@
+# ============================================================================
+include:
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/image/pipeline@release/0.1
+    inputs:
+      unit_test_enabled: false
+      structure_test_enabled: false
+
+  - project: kerrys-learning-lab/devsecops/cicd-catalog/cicd-tools
+    ref: release/0.1
+    file:
+      - rules.gitlab-ci.yml
+
+  - local: example/.gitlab-ci.yml
+    inputs:
+      job_image: $CI_REGISTRY_IMAGE:build.${CI_PIPELINE_IID}
+
+
+# ============================================================================
+workflow:
+  name: Helm Chart Pipeline Catalog Builder
+  rules:
+    - !reference [.rules//merge-request-as-primary-workflow, rules]

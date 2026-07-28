@@ -1,0 +1,155 @@
+# ============================================================================
+spec:
+  inputs:
+
+    # ------------------------------------------------------------------------
+    chart_dir:
+      description: Relative path to the chart contents (folder which contains
+                   Chart.yaml)
+      type: string
+      default: .
+
+    helm_dependencies:
+      type: array
+      default: []
+
+    package_stage:
+      description: Assigns the Pipeline stage for the 'helm package' Job
+      type: string
+      default: build
+
+    package_needs:
+      description: DAG specification for the 'helm package' Job
+      type: array
+      default: []
+
+
+    # ------------------------------------------------------------------------
+    # These settings affect the unit testing of the Helm chart
+    unit_test_enabled:
+      description:  If true, the Helm chart will be unit tested
+      type: boolean
+      default: true
+
+    unit_test_chart_dir:
+      description: Relative path to the chart contents to be tested (folder
+                   which contains Chart.yaml).
+
+                   Generally speaking, this will be the same value as for
+                   'helm_chart_dir'.  However, when testing library
+                   charts, this will usually be a different Chart directory
+                   which exists specifically to use the library Chart.
+      type: string
+      default: .
+
+    unit_test_file_glob:
+      description: Test files glob pattern relative to 'helm_unit_test_chart_dir'
+      type: string
+      default: tests/*.tests.yaml
+
+    unit_test_stage:
+      description: Assigns the Pipeline stage for the 'helm unit-test' Job
+      type: string
+      default: test
+
+
+    # ------------------------------------------------------------------------
+    # These settings affect the published Chart
+    publish_destination:
+      description: |
+                    Determine the destination for the published Chart.
+
+                    - oci -     Publish to the project's image registry
+                    - package - Publish to the Project's package registry
+                    - both -    Publishes to both the oci and package registries
+      type: string
+      options:
+        - oci
+        - package
+        - both
+      default: both
+
+    publish_stage:
+      description: Assigns the Pipeline stage for the 'helm push' Job
+      type: string
+      default: publish
+
+    publish_mode:
+      description: By default, only protected refs are pushed to the Helm
+                   Chart repository.  Specifying 'force' will push the Chart for
+                   non-protected refs.  Specifying 'skip' will not push
+                   protected refs.
+      type: string
+      options:
+        - protected
+        - skip
+        - force
+      default: protected
+
+
+    # ------------------------------------------------------------------------
+    # These settings affect all Jobs instantiated by this component
+    job_image:
+      description:  The image to use for Jobs within this Pipeline
+      type: string
+      default: $CI_REGISTRY_IMAGE:main
+
+    job_name_prefix:
+      description: Optional prefix for the Job names
+      type: string
+      default: ''
+
+    job_name_suffix:
+      description: Optional suffix for the Job names
+      type: string
+      default: ''
+
+
+---
+
+
+# ============================================================================
+include:
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/semver/job@release/0.1
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/release/job@release/0.1
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/auto-merge-forward/job@release/0.1
+
+  # --------------------------------------------------------------------------
+  - local: templates/package.yml
+    inputs:
+      chart_dir: $[[ inputs.chart_dir ]]
+      helm_dependencies: $[[ inputs.helm_dependencies ]]
+      stage: $[[ inputs.package_stage ]]
+      job_image: $[[ inputs.job_image ]]
+      needs: $[[ inputs.package_needs ]]
+      job_name_prefix: $[[ inputs.job_name_prefix ]]
+      job_name_suffix: $[[ inputs.job_name_suffix ]]
+
+  # --------------------------------------------------------------------------
+  - local: templates/unit-test.yml
+    inputs:
+      enabled: $[[ inputs.unit_test_enabled ]]
+      chart_dir: $[[ inputs.unit_test_chart_dir ]]
+      file_glob: $[[ inputs.unit_test_file_glob ]]
+      stage: $[[ inputs.unit_test_stage ]]
+      job_image: $[[ inputs.job_image ]]
+      job_name_prefix: $[[ inputs.job_name_prefix ]]
+      job_name_suffix: $[[ inputs.job_name_suffix ]]
+
+  # --------------------------------------------------------------------------
+  - local: templates/publish.yml
+    inputs:
+      chart_dir: $[[ inputs.chart_dir ]]
+      destination: $[[ inputs.publish_destination ]]
+      mode: $[[ inputs.publish_mode ]]
+      stage: $[[ inputs.publish_stage ]]
+      job_image: $[[ inputs.job_image ]]
+      job_name_prefix: $[[ inputs.job_name_prefix ]]
+      job_name_suffix: $[[ inputs.job_name_suffix ]]
+
+
+# ============================================================================
+workflow:
+  name: Helm Chart Pipeline
+  rules:
+    - !reference [.rules//merge-request-as-primary-workflow,  rules]

@@ -1,0 +1,70 @@
+# ============================================================================
+.helpers/helm/configure-dependency-repos:
+  before_script:
+    - |
+      # --- helpers/helm/configure-dependency-repos --------------------------
+
+      # ----------------------------------------------------------------------
+      # From the environment
+      for var in $(compgen -v HELM_REPO_); do
+        if [[ "${var}" == *_URL ]]; then
+          name=${var#HELM_REPO_}
+          name=${name/%_URL/}
+          username=HELM_REPO_${name}_USERNAME
+          password_var=HELM_REPO_${name}_PASSWORD
+
+          url=${!var}
+          alias=${name,,}
+          alias=${alias//_/-}
+          username=${!username}
+          password_var=${!password_var}
+
+          cli_args=()
+
+          if [[ -n "${username}" ]]; then
+            cli_args+=(--username ${username})
+          fi
+          if [[ -n "${password_var}" ]]; then
+            cli_args+=(--password ${password_var})
+          fi
+
+          cli_args+=(${alias})
+          cli_args+=(${url})
+
+          echo "⛵ Adding Helm repo: ${alias} (${name}: ${url})"
+          helm repo add ${cli_args[@]}
+        fi
+      done
+
+      # ----------------------------------------------------------------------
+      # From the component, which arrive as a JSON array of JSON objects:
+      COMPONENT_INPUT_HELM_DEPENDENCIES="${COMPONENT_INPUT_HELM_DEPENDENCIES//\'/}"
+      while read -r dep; do
+        local alias=$(echo "${dep}" | jq -r '.alias // ""')
+        local url=$(echo "${dep}" | jq -r '.url // ""')
+        local username=$(echo "${dep}" | jq -r '.username // ""')
+        local password=$(echo "${dep}" | jq -r '.password // ""')
+
+        if [[ -z "${alias}" || -z "${url}" ]]; then
+          echo "❌ Error:   Helm dependency object is invalid."
+          echo "            Expected: '{ alias: <alias>, url: <url> }'"
+          echo "            Actual:   '${dep}'"
+          exit 100
+        fi
+
+        cli_args=()
+
+        if [[ -n "${username}" ]]; then
+          cli_args+=(--username ${username})
+        fi
+        if [[ -n "${password_var}" ]]; then
+          cli_args+=(--password ${password_var})
+        fi
+
+        cli_args+=(${alias})
+        cli_args+=(${url})
+
+        echo "⛵ Adding Helm repo: ${alias} (${url})"
+        helm repo add ${cli_args[@]}
+
+      done < <(jq -r '.[]' <<< "${COMPONENT_INPUT_HELM_DEPENDENCIES}")
