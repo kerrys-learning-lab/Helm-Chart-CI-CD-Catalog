@@ -43,12 +43,8 @@ spec:
 
 # ============================================================================
 include:
-  - project: kerrys-learning-lab/devsecops/cicd-catalog/cicd-tools
-    ref: release/0.1
-    file:
-      - stages.gitlab-ci.yml
-
-  - local: .jobs.gitlab-ci.yml
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/defaults@release/0.2
+  - local: .build.gitlab-ci.yml
 
 
 # ----------------------------------------------------------------------------
@@ -58,7 +54,7 @@ include:
   stage: $[[ inputs.stage ]]
   variables:
     HELM_CHART_DIR: $[[ inputs.chart_dir ]]
-    COMPONENT_INPUT_HELM_DEPENDENCIES: "'$[[ inputs.helm_dependencies ]]'"
+    CMPNT_HELM_DEPENDENCIES: "'$[[ inputs.helm_dependencies ]]'"
   needs:
     - pipeline version
     - $[[ inputs.needs ]]

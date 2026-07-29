@@ -1,8 +1,42 @@
 # ============================================================================
-.helpers/helm/configure-dependency-repos:
+include:
+  - local: .base.gitlab-ci.yml
+
+
+# ============================================================================
+.helm-package:
+  stage: build
+  variables:
+    HELM_CHART_DIR: .
+  extends: .helm-base
+  before_script:
+    - !reference [.helm-package//configure-dependency-repos, before_script]
+    - |
+      # --- helm-package (before) --------------------------------------------
+      helm dependency update ${HELM_CHART_DIR}
+
+  script:
+    - |
+      # --- helm-package -----------------------------------------------------
+      HELM_CHART_APP_VERSION=${RELEASE_TRAIN:-${SEMANTIC_VERSION_SLUG}}
+
+      mkdir -p ${PIPELINE_ARTIFACTS_DIR}
+      helm package  --app-version   ${HELM_CHART_APP_VERSION}  \
+                    --version       ${SEMANTIC_VERSION_SLUG}  \
+                    --destination   ${PIPELINE_ARTIFACTS_DIR}  \
+                    ${HELM_CHART_DIR}
+  artifacts:
+    paths:
+      - $PIPELINE_ARTIFACTS_DIR
+    when: always
+    expire_in: 1 week
+
+
+# ============================================================================
+.helm-package//configure-dependency-repos:
   before_script:
     - |
-      # --- helpers/helm/configure-dependency-repos --------------------------
+      # --- helm-package//configure-dependency-repos -------------------------
 
       # ----------------------------------------------------------------------
       # From the environment
@@ -38,12 +72,12 @@
 
       # ----------------------------------------------------------------------
       # From the component, which arrive as a JSON array of JSON objects:
-      COMPONENT_INPUT_HELM_DEPENDENCIES="${COMPONENT_INPUT_HELM_DEPENDENCIES//\'/}"
+      CMPNT_HELM_DEPENDENCIES="${CMPNT_HELM_DEPENDENCIES//\'/}"
       while read -r dep; do
-        local alias=$(echo "${dep}" | jq -r '.alias // ""')
-        local url=$(echo "${dep}" | jq -r '.url // ""')
-        local username=$(echo "${dep}" | jq -r '.username // ""')
-        local password=$(echo "${dep}" | jq -r '.password // ""')
+        alias=$(echo "${dep}" | jq -r '.alias // ""')
+        url=$(echo "${dep}" | jq -r '.url // ""')
+        username=$(echo "${dep}" | jq -r '.username // ""')
+        password=$(echo "${dep}" | jq -r '.password // ""')
 
         if [[ -z "${alias}" || -z "${url}" ]]; then
           echo "❌ Error:   Helm dependency object is invalid."
@@ -57,8 +91,8 @@
         if [[ -n "${username}" ]]; then
           cli_args+=(--username ${username})
         fi
-        if [[ -n "${password_var}" ]]; then
-          cli_args+=(--password ${password_var})
+        if [[ -n "${password}" ]]; then
+          cli_args+=(--password ${password})
         fi
 
         cli_args+=(${alias})
@@ -67,4 +101,4 @@
         echo "⛵ Adding Helm repo: ${alias} (${url})"
         helm repo add ${cli_args[@]}
 
-      done < <(jq -r '.[]' <<< "${COMPONENT_INPUT_HELM_DEPENDENCIES}")
+      done < <(jq -cr '.[]' <<< "${CMPNT_HELM_DEPENDENCIES}")

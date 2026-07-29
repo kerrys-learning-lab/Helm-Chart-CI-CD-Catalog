@@ -20,7 +20,7 @@ spec:
     stage:
       description: Assigns the Pipeline stage for this Job
       type: string
-      default: publish
+      default: push
 
     mode:
       description:  See templates/pipeline.yml
@@ -52,18 +52,14 @@ spec:
 
 # ============================================================================
 include:
-  - project: kerrys-learning-lab/devsecops/cicd-catalog/cicd-tools
-    ref: release/0.1
-    file:
-      - stages.gitlab-ci.yml
-
-  - local: .jobs.gitlab-ci.yml
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/defaults@release/0.2
+  - local: .push.gitlab-ci.yml
 
 
 # ----------------------------------------------------------------------------
-"$[[ inputs.job_name_prefix ]]helm publish$[[ inputs.job_name_suffix ]]":
+"$[[ inputs.job_name_prefix ]]helm push$[[ inputs.job_name_suffix ]]":
   image: $[[ inputs.job_image ]]
-  extends: .helm-publish
+  extends: .helm-push
   stage: $[[ inputs.stage ]]
   variables:
     HELM_CHART_DIR: $[[ inputs.chart_dir ]]

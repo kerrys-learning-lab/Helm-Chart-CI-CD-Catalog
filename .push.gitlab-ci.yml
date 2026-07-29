@@ -1,68 +1,11 @@
 # ============================================================================
 include:
-  - local: helpers/helm.gitlab-ci.yml
+  - local: .base.gitlab-ci.yml
 
 
 # ============================================================================
-.helm-base:
-  image: $CI_REGISTRY_IMAGE:main
-
-
-# ============================================================================
-.helm-package:
-  stage: build
-  variables:
-    HELM_CHART_DIR: .
-  extends: .helm-base
-  before_script:
-    - !reference [.helpers/helm/configure-dependency-repos, before_script]
-    - |
-      # --- helm-package (before) --------------------------------------------
-      helm dependency update ${HELM_CHART_DIR}
-
-  script:
-    - |
-      # --- helm-package -----------------------------------------------------
-      HELM_CHART_APP_VERSION=${RELEASE_TRAIN:-${SEMANTIC_VERSION_SLUG}}
-
-      mkdir -p ${PIPELINE_ARTIFACTS_DIR}
-      helm package  --app-version   ${HELM_CHART_APP_VERSION}  \
-                    --version       ${SEMANTIC_VERSION_SLUG}  \
-                    --destination   ${PIPELINE_ARTIFACTS_DIR}  \
-                    ${HELM_CHART_DIR}
-  artifacts:
-    paths:
-      - $PIPELINE_ARTIFACTS_DIR
-    when: always
-    expire_in: 1 week
-
-
-# ============================================================================
-.helm-unit-test:
-  stage: test
-  extends: .helm-base
-  variables:
-    HELM_UNITTEST_FILE_GLOB: tests/*.tests.yaml
-  script:
-    - |
-      # --- helm-unit-test ---------------------------------------------------
-      mkdir -p ${JOB_ARTIFACTS_DIR}
-      helm unittest --file ${HELM_UNITTEST_FILE_GLOB}  \
-                    --output-type JUnit  \
-                    --output-file ${JOB_ARTIFACTS_DIR}/unit-test-results.xml  \
-                    ${HELM_CHART_DIR}
-  artifacts:
-    paths:
-      - $JOB_ARTIFACTS_DIR
-    reports:
-      junit: ${JOB_ARTIFACTS_DIR}/unit-test-results.xml
-    when: always
-    expire_in: 1 week
-
-
-# ============================================================================
-.helm-publish:
-  stage: publish
+.helm-push:
+  stage: push
   extends: .helm-base
   interruptible: false
   variables:
@@ -71,7 +14,7 @@ include:
     HELM_PACKAGE_REPO: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/stable
   before_script:
     - |
-      # --- helm-publish (before) --------------------------------------------
+      # --- helm-push (before) --------------------------------------------
       if [[ ${HELM_DESTINATION} =~ ^(oci|both)$ ]]; then
         echo "🔓 Logging in to Helm OCI registry: ${CI_REGISTRY}"
 
@@ -89,7 +32,7 @@ include:
       fi
   script:
     - |
-      # --- helm-publish -----------------------------------------------------
+      # --- helm-push -----------------------------------------------------
       HELM_CHART_NAME=$(helm show chart ${HELM_CHART_DIR} | grep -Po '^name:\s+\K.*')
 
       if [[ ${HELM_DESTINATION} =~ ^(oci|both)$ ]]; then

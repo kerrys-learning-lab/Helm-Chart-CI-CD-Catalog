@@ -54,10 +54,10 @@ spec:
 
 
     # ------------------------------------------------------------------------
-    # These settings affect the published Chart
-    publish_destination:
+    # These settings affect the pushed Chart
+    push_destination:
       description: |
-                    Determine the destination for the published Chart.
+                    Determine the destination for the pushed Chart.
 
                     - oci -     Publish to the project's image registry
                     - package - Publish to the Project's package registry
@@ -69,12 +69,12 @@ spec:
         - both
       default: both
 
-    publish_stage:
+    push_stage:
       description: Assigns the Pipeline stage for the 'helm push' Job
       type: string
-      default: publish
+      default: push
 
-    publish_mode:
+    push_mode:
       description: By default, only protected refs are pushed to the Helm
                    Chart repository.  Specifying 'force' will push the Chart for
                    non-protected refs.  Specifying 'skip' will not push
@@ -110,9 +110,9 @@ spec:
 
 # ============================================================================
 include:
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/semver/job@release/0.1
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/release/job@release/0.1
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/auto-merge-forward/job@release/0.1
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/semver@release/0.2
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/release@release/0.2
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/auto-merge-forward@release/0.2
 
   # --------------------------------------------------------------------------
   - local: templates/package.yml
@@ -137,12 +137,12 @@ include:
       job_name_suffix: $[[ inputs.job_name_suffix ]]
 
   # --------------------------------------------------------------------------
-  - local: templates/publish.yml
+  - local: templates/push.yml
     inputs:
       chart_dir: $[[ inputs.chart_dir ]]
-      destination: $[[ inputs.publish_destination ]]
-      mode: $[[ inputs.publish_mode ]]
-      stage: $[[ inputs.publish_stage ]]
+      destination: $[[ inputs.push_destination ]]
+      mode: $[[ inputs.push_mode ]]
+      stage: $[[ inputs.push_stage ]]
       job_image: $[[ inputs.job_image ]]
       job_name_prefix: $[[ inputs.job_name_prefix ]]
       job_name_suffix: $[[ inputs.job_name_suffix ]]

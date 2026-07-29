@@ -28,7 +28,7 @@ include:
       job_name_prefix: "[example] "
       chart_dir: example
       unit_test_chart_dir: example
-      publish_mode: force
+      push_mode: force
       job_image: $[[ inputs.job_image ]]
       package_needs:
         - image build

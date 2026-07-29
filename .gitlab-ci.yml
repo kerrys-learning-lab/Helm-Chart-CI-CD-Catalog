@@ -1,18 +1,12 @@
 # ============================================================================
 include:
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/image/pipeline@release/0.1
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/image/pipeline@release/0.2
     inputs:
       unit_test_enabled: false
       structure_test_enabled: false
-
-  - project: kerrys-learning-lab/devsecops/cicd-catalog/cicd-tools
-    ref: release/0.1
-    file:
-      - rules.gitlab-ci.yml
-
-  - local: example/.gitlab-ci.yml
-    inputs:
-      job_image: $CI_REGISTRY_IMAGE:build.${CI_PIPELINE_IID}
+  - local: .package.gitlab-ci.yml
+  - local: .unit-test.gitlab-ci.yml
+  - local: .push.gitlab-ci.yml
 
 
 # ============================================================================
@@ -20,3 +14,45 @@ workflow:
   name: Helm Chart Pipeline Catalog Builder
   rules:
     - !reference [.rules//merge-request-as-primary-workflow, rules]
+
+
+# ============================================================================
+test [helm package]:
+  image: $CI_REGISTRY_IMAGE:build.$CI_PIPELINE_IID
+  extends: .helm-package
+  stage: test
+  variables:
+    HELM_CHART_DIR: example
+    CMPNT_HELM_DEPENDENCIES: '[{  "alias":    "westsidestreet-argo-cd",
+                                  "url":      "https://gitlab.westsidestreet.net/api/v4/projects/32/packages/helm/stable",
+                                  "username": "gitlab-cicd-bot",
+                                  "password": "$GITLAB_CICD_BOT_TOKEN"
+                              }]'
+
+
+# ============================================================================
+test [helm unit-test]:
+  image: $CI_REGISTRY_IMAGE:build.$CI_PIPELINE_IID
+  extends: .helm-unit-test
+  stage: test
+  variables:
+    HELM_CHART_DIR: example
+  needs:
+    - job: pipeline version
+      artifacts: true
+    - test [helm package]
+
+
+# ============================================================================
+test [helm push]:
+  image: $CI_REGISTRY_IMAGE:build.$CI_PIPELINE_IID
+  extends: .helm-push
+  stage: test
+  variables:
+    HELM_CHART_DIR: example
+  needs:
+    - job: pipeline version
+      artifacts: true
+    - job: test [helm package]
+      artifacts: true
+    - test [helm unit-test]
