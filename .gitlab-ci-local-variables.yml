@@ -1,0 +1,4 @@
+CI_PROJECT_DESCRIPTION: GitLab CI/CD Catalog for packaging, testing, and pushing Helm Charts.
+CI_PROJECT_ID: 102
+CI_PROJECT_TITLE: Helm Chart
+CI_REPOSITORY_URL: https://gitlab.westsidestreet.net/kerrys-learning-lab/devsecops/cicd-catalog/helm-chart

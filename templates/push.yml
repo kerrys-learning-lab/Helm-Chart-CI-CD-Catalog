@@ -1,0 +1,71 @@
+# ============================================================================
+spec:
+  inputs:
+
+    # ------------------------------------------------------------------------
+    chart_dir:
+      description:  See templates/pipeline.yml
+      type: string
+      default: .
+
+    destination:
+      description:  See templates/pipeline.yml
+      type: string
+      options:
+        - oci
+        - package
+        - both
+      default: both
+
+    stage:
+      description: Assigns the Pipeline stage for this Job
+      type: string
+      default: push
+
+    mode:
+      description:  See templates/pipeline.yml
+      type: string
+      options:
+        - protected
+        - skip
+        - force
+      default: protected
+
+    job_image:
+      description:  The image to use for this Job.  **Requires Bash**
+      type: string
+      default: $CI_REGISTRY_IMAGE:main
+
+    job_name_prefix:
+      description: Optional prefix for this Job's name
+      type: string
+      default: ''
+
+    job_name_suffix:
+      description: Optional suffix for this Job's name
+      type: string
+      default: ''
+
+
+---
+
+
+# ============================================================================
+include:
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/defaults@main
+  - local: .push.gitlab-ci.yml
+
+
+# ----------------------------------------------------------------------------
+"$[[ inputs.job_name_prefix ]]helm push$[[ inputs.job_name_suffix ]]":
+  image: $[[ inputs.job_image ]]
+  extends: .helm-push
+  stage: $[[ inputs.stage ]]
+  variables:
+    HELM_CHART_DIR: $[[ inputs.chart_dir ]]
+    HELM_DESTINATION: $[[ inputs.destination ]]
+  rules:
+    - if: '"$[[ inputs.mode ]]" == "skip"'
+      when: never
+    - if: '"$[[ inputs.mode ]]" == "force"'
+    - !reference [.rules//if-protected-ref,  rules]

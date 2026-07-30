@@ -1,0 +1,104 @@
+# ============================================================================
+include:
+  - local: .base.gitlab-ci.yml
+
+
+# ============================================================================
+.helm-package:
+  stage: build
+  variables:
+    HELM_CHART_DIR: .
+  extends: .helm-base
+  before_script:
+    - !reference [.helm-package//configure-dependency-repos, before_script]
+    - |
+      # --- helm-package (before) --------------------------------------------
+      helm dependency update ${HELM_CHART_DIR}
+
+  script:
+    - |
+      # --- helm-package -----------------------------------------------------
+      HELM_CHART_APP_VERSION=${RELEASE_TRAIN:-${SEMANTIC_VERSION_SLUG}}
+
+      mkdir -p ${PIPELINE_ARTIFACTS_DIR}
+      helm package  --app-version   ${HELM_CHART_APP_VERSION}  \
+                    --version       ${SEMANTIC_VERSION_SLUG}  \
+                    --destination   ${PIPELINE_ARTIFACTS_DIR}  \
+                    ${HELM_CHART_DIR}
+  artifacts:
+    paths:
+      - $PIPELINE_ARTIFACTS_DIR
+    when: always
+    expire_in: 1 week
+
+
+# ============================================================================
+.helm-package//configure-dependency-repos:
+  before_script:
+    - |
+      # --- helm-package//configure-dependency-repos -------------------------
+
+      # ----------------------------------------------------------------------
+      # From the environment
+      for var in $(compgen -v HELM_REPO_); do
+        if [[ "${var}" == *_URL ]]; then
+          name=${var#HELM_REPO_}
+          name=${name/%_URL/}
+          username=HELM_REPO_${name}_USERNAME
+          password_var=HELM_REPO_${name}_PASSWORD
+
+          url=${!var}
+          alias=${name,,}
+          alias=${alias//_/-}
+          username=${!username}
+          password_var=${!password_var}
+
+          cli_args=()
+
+          if [[ -n "${username}" ]]; then
+            cli_args+=(--username ${username})
+          fi
+          if [[ -n "${password_var}" ]]; then
+            cli_args+=(--password ${password_var})
+          fi
+
+          cli_args+=(${alias})
+          cli_args+=(${url})
+
+          echo "⛵ Adding Helm repo: ${alias} (${name}: ${url})"
+          helm repo add ${cli_args[@]}
+        fi
+      done
+
+      # ----------------------------------------------------------------------
+      # From the component, which arrive as a JSON array of JSON objects:
+      CMPNT_HELM_DEPENDENCIES="${CMPNT_HELM_DEPENDENCIES//\'/}"
+      while read -r dep; do
+        alias=$(echo "${dep}" | jq -r '.alias // ""')
+        url=$(echo "${dep}" | jq -r '.url // ""')
+        username=$(echo "${dep}" | jq -r '.username // ""')
+        password=$(echo "${dep}" | jq -r '.password // ""')
+
+        if [[ -z "${alias}" || -z "${url}" ]]; then
+          echo "❌ Error:   Helm dependency object is invalid."
+          echo "            Expected: '{ alias: <alias>, url: <url> }'"
+          echo "            Actual:   '${dep}'"
+          exit 100
+        fi
+
+        cli_args=()
+
+        if [[ -n "${username}" ]]; then
+          cli_args+=(--username ${username})
+        fi
+        if [[ -n "${password}" ]]; then
+          cli_args+=(--password ${password})
+        fi
+
+        cli_args+=(${alias})
+        cli_args+=(${url})
+
+        echo "⛵ Adding Helm repo: ${alias} (${url})"
+        helm repo add ${cli_args[@]}
+
+      done < <(jq -cr '.[]' <<< "${CMPNT_HELM_DEPENDENCIES}")

@@ -1,0 +1,34 @@
+# ============================================================================
+# A simple Helm Chart example, including helmunit tests.
+# --------------------------------------------------------------------------
+spec:
+
+  inputs:
+
+    job_image:
+      description:  |
+                    The image to use for Jobs within this Pipeline.
+
+                    NOTE: This customization is generally only necessary for
+                          testing the Pipeline.
+      type: string
+      default: $CI_REGISTRY_IMAGE:main
+
+
+---
+
+
+# ============================================================================
+include:
+
+
+  # --------------------------------------------------------------------------
+  - local: templates/pipeline.yml
+    inputs:
+      job_name_prefix: "[example] "
+      chart_dir: example
+      unit_test_chart_dir: example
+      push_mode: force
+      job_image: $[[ inputs.job_image ]]
+      package_needs:
+        - image build
