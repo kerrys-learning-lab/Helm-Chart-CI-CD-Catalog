@@ -1,0 +1,99 @@
+# ============================================================================
+include:
+  - local: .base.gitlab-ci.yml
+
+
+# ============================================================================
+.helm-push:
+  stage: push
+  extends: .helm-base
+  interruptible: false
+  variables:
+    HELM_DESTINATION: both
+    HELM_OCI_REGISTRY: ${CI_REGISTRY_IMAGE}/helm-charts
+    HELM_PACKAGE_REPO: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/stable
+  before_script:
+    - |
+      # --- helm-push (before) --------------------------------------------
+      if [[ ${HELM_DESTINATION} =~ ^(oci|both)$ ]]; then
+        echo "🔓 Logging in to Helm OCI registry: ${CI_REGISTRY}"
+
+        printf '%s' "${CI_REGISTRY_PASSWORD}" | helm registry login --password-stdin  \
+                                                                    --username ${CI_REGISTRY_USER}  \
+                                                                    ${CI_REGISTRY}
+      fi
+      if [[ ${HELM_DESTINATION} =~ ^(package|both)$ ]]; then
+        echo "🔓 Logging in to Helm Package repository: ${CI_SERVER_FQDN}"
+
+        helm repo add --username gitlab-ci-token  \
+                      --password ${CI_JOB_TOKEN}  \
+                      ci-package-repo  \
+                      ${HELM_PACKAGE_REPO}
+      fi
+  script:
+    - |
+      # --- helm-push -----------------------------------------------------
+      HELM_CHART_NAME=$(helm show chart ${HELM_CHART_DIR} | grep -Po '^name:\s+\K.*')
+
+      if [[ ${HELM_DESTINATION} =~ ^(oci|both)$ ]]; then
+        echo "🚀  Publishing ${HELM_CHART_NAME}-${SEMANTIC_VERSION_SLUG} to OCI registry"
+        echo "      --> ${HELM_OCI_REGISTRY}"
+
+        helm push ${PIPELINE_ARTIFACTS_DIR}/${HELM_CHART_NAME}-${SEMANTIC_VERSION_SLUG}.tgz  \
+                  oci://${HELM_OCI_REGISTRY}
+      fi
+      if [[ ${HELM_DESTINATION} =~ ^(package|both)$ ]]; then
+        echo "🚀  Publishing ${HELM_CHART_NAME}-${SEMANTIC_VERSION_SLUG} to package repository"
+        echo "      --> ${HELM_PACKAGE_REPO}"
+
+        helm cm-push ${PIPELINE_ARTIFACTS_DIR}/${HELM_CHART_NAME}-${SEMANTIC_VERSION_SLUG}.tgz  \
+                      ci-package-repo
+      fi
+    - !reference [.helm-release-notes,  script]
+  artifacts:
+    paths:
+      - $RELEASE_NOTES_DIR
+
+
+# ============================================================================
+.helm-release-notes:
+  script:
+    - |
+      # --- helm-release-notes -----------------------------------------------
+      mkdir -p ${RELEASE_NOTES_DIR}/helm-chart
+
+      README_FILEPATH=${RELEASE_NOTES_DIR}/helm-chart/${CI_JOB_NAME_SLUG}.md
+
+      echo "### Helm Chart: ${HELM_CHART_NAME}"   >> ${README_FILEPATH}
+      echo ""                                     >> ${README_FILEPATH}
+
+      if [[ ${HELM_DESTINATION} =~ ^(oci|both)$ ]]; then
+        echo "- OCI Registry"                                                       >> ${README_FILEPATH}
+        echo ""                                                                     >> ${README_FILEPATH}
+        echo "  \`\`\`bash"                                                         >> ${README_FILEPATH}
+        echo "  helm install --version ${SEMANTIC_VERSION_SLUG}  \\"                     >> ${README_FILEPATH}
+        echo "                <NAME> \\"                                            >> ${README_FILEPATH}
+        echo "                oci://${HELM_OCI_REGISTRY}/${HELM_CHART_NAME}"        >> ${README_FILEPATH}
+        echo "  \`\`\`"                                                             >> ${README_FILEPATH}
+      fi
+
+      if [[ ${HELM_DESTINATION} =~ ^(package|both)$ ]]; then
+        echo "- Package Repository"                                                 >> ${README_FILEPATH}
+        echo ""                                                                     >> ${README_FILEPATH}
+        echo "  \`\`\`bash"                                                         >> ${README_FILEPATH}
+        echo "  # Add the Helm repository:"                                         >> ${README_FILEPATH}
+        echo "  helm repo add ${CI_PROJECT_NAME} ${HELM_PACKAGE_REPO}"              >> ${README_FILEPATH}
+        echo ""                                                                     >> ${README_FILEPATH}
+        echo "  # Verify the new version (${SEMANTIC_VERSION_SLUG}) is available:"       >> ${README_FILEPATH}
+        echo "  helm search repo --versions ${CI_PROJECT_NAME}/${HELM_CHART_NAME}"  >> ${README_FILEPATH}
+        echo ""                                                                     >> ${README_FILEPATH}
+        echo "  # If the latest version isn't available, update the repo:"          >> ${README_FILEPATH}
+        echo "  helm repo update ${CI_PROJECT_NAME}"                                >> ${README_FILEPATH}
+        echo ""                                                                     >> ${README_FILEPATH}
+        echo "  # Customize your values, then install the Chart:"                   >> ${README_FILEPATH}
+        echo "  helm install  --namespace <NAMESPACE>  \\"                          >> ${README_FILEPATH}
+        echo "               --values <CONFIG_VALUES_FILE>  \\"                     >> ${README_FILEPATH}
+        echo "               <NAME>  \\"                                            >> ${README_FILEPATH}
+        echo "                ${CI_PROJECT_NAME}/${HELM_CHART_NAME}"                >> ${README_FILEPATH}
+        echo "  \`\`\`"                                                             >> ${README_FILEPATH}
+      fi
