@@ -1,7 +1,8 @@
 # ============================================================================
 include:
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/image/pipeline@release/0.2
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/image/pipeline@main
     inputs:
+      name: builder
       unit_test_enabled: false
       structure_test_enabled: false
   - local: .package.gitlab-ci.yml
@@ -18,12 +19,13 @@ workflow:
 
 # ============================================================================
 test [helm package]:
-  image: $CI_REGISTRY_IMAGE:build.$CI_PIPELINE_IID
+  image: $CI_REGISTRY_IMAGE/builder:build.$CI_PIPELINE_IID
   extends: .helm-package
   stage: test
   variables:
     HELM_CHART_DIR: example
-    CMPNT_HELM_DEPENDENCIES: '[{  "alias":    "westsidestreet-argo-cd",
+    CMPNT_HELM_DEPENDENCIES: '[{
+                                  "alias":    "westsidestreet-argo-cd",
                                   "url":      "https://gitlab.westsidestreet.net/api/v4/projects/32/packages/helm/stable",
                                   "username": "gitlab-cicd-bot",
                                   "password": "$GITLAB_CICD_BOT_TOKEN"
@@ -32,7 +34,7 @@ test [helm package]:
 
 # ============================================================================
 test [helm unit-test]:
-  image: $CI_REGISTRY_IMAGE:build.$CI_PIPELINE_IID
+  image: $CI_REGISTRY_IMAGE/builder:build.$CI_PIPELINE_IID
   extends: .helm-unit-test
   stage: test
   variables:
@@ -45,7 +47,7 @@ test [helm unit-test]:
 
 # ============================================================================
 test [helm push]:
-  image: $CI_REGISTRY_IMAGE:build.$CI_PIPELINE_IID
+  image: $CI_REGISTRY_IMAGE/builder:build.$CI_PIPELINE_IID
   extends: .helm-push
   stage: test
   variables:

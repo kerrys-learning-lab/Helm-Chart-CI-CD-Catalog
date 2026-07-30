@@ -110,9 +110,9 @@ spec:
 
 # ============================================================================
 include:
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/semver@release/0.2
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/release@release/0.2
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/auto-merge-forward@release/0.2
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/semver@main
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/release@main
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/auto-merge-forward@main
 
   # --------------------------------------------------------------------------
   - local: templates/package.yml
