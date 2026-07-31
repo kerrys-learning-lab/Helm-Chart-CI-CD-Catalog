@@ -72,7 +72,7 @@ spec:
     push_stage:
       description: Assigns the Pipeline stage for the 'helm push' Job
       type: string
-      default: push
+      default: publish
 
     push_mode:
       description: By default, only protected refs are pushed to the Helm
