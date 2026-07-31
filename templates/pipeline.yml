@@ -89,11 +89,6 @@ spec:
 
     # ------------------------------------------------------------------------
     # These settings affect all Jobs instantiated by this component
-    job_image:
-      description:  The image to use for Jobs within this Pipeline
-      type: string
-      default: $CI_REGISTRY_IMAGE:main
-
     job_name_prefix:
       description: Optional prefix for the Job names
       type: string
@@ -112,38 +107,35 @@ spec:
 include:
   - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/semver@main
   - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/release@main
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/auto-merge-forward@main
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/merge-forward@main
 
   # --------------------------------------------------------------------------
-  - local: templates/package.yml
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/helm-chart/package@$[[ component.reference ]]
     inputs:
       chart_dir: $[[ inputs.chart_dir ]]
       helm_dependencies: $[[ inputs.helm_dependencies ]]
       stage: $[[ inputs.package_stage ]]
-      job_image: $[[ inputs.job_image ]]
       needs: $[[ inputs.package_needs ]]
       job_name_prefix: $[[ inputs.job_name_prefix ]]
       job_name_suffix: $[[ inputs.job_name_suffix ]]
 
   # --------------------------------------------------------------------------
-  - local: templates/unit-test.yml
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/helm-chart/unit-test@$[[ component.reference ]]
     inputs:
       enabled: $[[ inputs.unit_test_enabled ]]
       chart_dir: $[[ inputs.unit_test_chart_dir ]]
       file_glob: $[[ inputs.unit_test_file_glob ]]
       stage: $[[ inputs.unit_test_stage ]]
-      job_image: $[[ inputs.job_image ]]
       job_name_prefix: $[[ inputs.job_name_prefix ]]
       job_name_suffix: $[[ inputs.job_name_suffix ]]
 
   # --------------------------------------------------------------------------
-  - local: templates/push.yml
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/helm-chart/push@$[[ component.reference ]]
     inputs:
       chart_dir: $[[ inputs.chart_dir ]]
       destination: $[[ inputs.push_destination ]]
       mode: $[[ inputs.push_mode ]]
       stage: $[[ inputs.push_stage ]]
-      job_image: $[[ inputs.job_image ]]
       job_name_prefix: $[[ inputs.job_name_prefix ]]
       job_name_suffix: $[[ inputs.job_name_suffix ]]
 

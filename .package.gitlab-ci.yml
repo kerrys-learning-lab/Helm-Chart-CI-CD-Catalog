@@ -14,7 +14,6 @@ include:
     - |
       # --- helm-package (before) --------------------------------------------
       helm dependency update ${HELM_CHART_DIR}
-
   script:
     - |
       # --- helm-package -----------------------------------------------------

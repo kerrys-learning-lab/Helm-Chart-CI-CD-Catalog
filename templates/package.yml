@@ -22,11 +22,6 @@ spec:
       type: array
       default: []
 
-    job_image:
-      description:  The image to use for this Job.  **Requires Bash**
-      type: string
-      default: $CI_REGISTRY_IMAGE:main
-
     job_name_prefix:
       description: Optional prefix for this Job's name
       type: string
@@ -36,6 +31,12 @@ spec:
       description: Optional suffix for this Job's name
       type: string
       default: ''
+
+
+  component:
+    - name
+    - version
+    - reference
 
 
 ---
@@ -49,10 +50,11 @@ include:
 
 # ----------------------------------------------------------------------------
 "$[[ inputs.job_name_prefix ]]helm package$[[ inputs.job_name_suffix ]]":
-  image: $[[ inputs.job_image ]]
   extends: .helm-package
   stage: $[[ inputs.stage ]]
   variables:
+    COMPONENT_NAME: $[[ component.name ]]
+    COMPONENT_REFERENCE: $[[ component.reference ]]
     HELM_CHART_DIR: $[[ inputs.chart_dir ]]
     CMPNT_HELM_DEPENDENCIES: "'$[[ inputs.helm_dependencies ]]'"
   needs:

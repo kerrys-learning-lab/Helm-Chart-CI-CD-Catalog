@@ -31,11 +31,6 @@ spec:
         - force
       default: protected
 
-    job_image:
-      description:  The image to use for this Job.  **Requires Bash**
-      type: string
-      default: $CI_REGISTRY_IMAGE:main
-
     job_name_prefix:
       description: Optional prefix for this Job's name
       type: string
@@ -45,6 +40,12 @@ spec:
       description: Optional suffix for this Job's name
       type: string
       default: ''
+
+
+  component:
+    - name
+    - version
+    - reference
 
 
 ---
@@ -58,10 +59,11 @@ include:
 
 # ----------------------------------------------------------------------------
 "$[[ inputs.job_name_prefix ]]helm push$[[ inputs.job_name_suffix ]]":
-  image: $[[ inputs.job_image ]]
   extends: .helm-push
   stage: $[[ inputs.stage ]]
   variables:
+    COMPONENT_NAME: $[[ component.name ]]
+    COMPONENT_REFERENCE: $[[ component.reference ]]
     HELM_CHART_DIR: $[[ inputs.chart_dir ]]
     HELM_DESTINATION: $[[ inputs.destination ]]
   rules:
