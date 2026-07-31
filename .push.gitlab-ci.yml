@@ -36,17 +36,17 @@ include:
       HELM_CHART_NAME=$(helm show chart ${HELM_CHART_DIR} | grep -Po '^name:\s+\K.*')
 
       if [[ ${HELM_DESTINATION} =~ ^(oci|both)$ ]]; then
-        echo "🚀  Publishing ${HELM_CHART_NAME}-${SEMANTIC_VERSION_SLUG} to OCI registry"
+        echo "🚀  Publishing ${HELM_CHART_NAME}-${SEMANTIC_VERSION} to OCI registry"
         echo "      --> ${HELM_OCI_REGISTRY}"
 
-        helm push ${PIPELINE_ARTIFACTS_DIR}/${HELM_CHART_NAME}-${SEMANTIC_VERSION_SLUG}.tgz  \
+        helm push ${PIPELINE_ARTIFACTS_DIR}/${HELM_CHART_NAME}-${SEMANTIC_VERSION}.tgz  \
                   oci://${HELM_OCI_REGISTRY}
       fi
       if [[ ${HELM_DESTINATION} =~ ^(package|both)$ ]]; then
-        echo "🚀  Publishing ${HELM_CHART_NAME}-${SEMANTIC_VERSION_SLUG} to package repository"
+        echo "🚀  Publishing ${HELM_CHART_NAME}-${SEMANTIC_VERSION} to package repository"
         echo "      --> ${HELM_PACKAGE_REPO}"
 
-        helm cm-push ${PIPELINE_ARTIFACTS_DIR}/${HELM_CHART_NAME}-${SEMANTIC_VERSION_SLUG}.tgz  \
+        helm cm-push ${PIPELINE_ARTIFACTS_DIR}/${HELM_CHART_NAME}-${SEMANTIC_VERSION}.tgz  \
                       ci-package-repo
       fi
     - !reference [.helm-release-notes,  script]
@@ -71,7 +71,7 @@ include:
         echo "- OCI Registry"                                                       >> ${README_FILEPATH}
         echo ""                                                                     >> ${README_FILEPATH}
         echo "  \`\`\`bash"                                                         >> ${README_FILEPATH}
-        echo "  helm install --version ${SEMANTIC_VERSION_SLUG}  \\"                     >> ${README_FILEPATH}
+        echo "  helm install --version ${SEMANTIC_VERSION}  \\"                     >> ${README_FILEPATH}
         echo "                <NAME> \\"                                            >> ${README_FILEPATH}
         echo "                oci://${HELM_OCI_REGISTRY}/${HELM_CHART_NAME}"        >> ${README_FILEPATH}
         echo "  \`\`\`"                                                             >> ${README_FILEPATH}
@@ -84,7 +84,7 @@ include:
         echo "  # Add the Helm repository:"                                         >> ${README_FILEPATH}
         echo "  helm repo add ${CI_PROJECT_NAME} ${HELM_PACKAGE_REPO}"              >> ${README_FILEPATH}
         echo ""                                                                     >> ${README_FILEPATH}
-        echo "  # Verify the new version (${SEMANTIC_VERSION_SLUG}) is available:"       >> ${README_FILEPATH}
+        echo "  # Verify the new version (${SEMANTIC_VERSION}) is available:"       >> ${README_FILEPATH}
         echo "  helm search repo --versions ${CI_PROJECT_NAME}/${HELM_CHART_NAME}"  >> ${README_FILEPATH}
         echo ""                                                                     >> ${README_FILEPATH}
         echo "  # If the latest version isn't available, update the repo:"          >> ${README_FILEPATH}
