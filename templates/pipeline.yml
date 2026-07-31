@@ -115,7 +115,7 @@ include:
   - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/merge-forward@release/0.2
 
   # --------------------------------------------------------------------------
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/helm-chart/package@$[[ component.reference ]]
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/helm-chart/package@release/0.1
     inputs:
       chart_dir: $[[ inputs.chart_dir ]]
       helm_dependencies: $[[ inputs.helm_dependencies ]]
@@ -125,7 +125,7 @@ include:
       job_name_suffix: $[[ inputs.job_name_suffix ]]
 
   # --------------------------------------------------------------------------
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/helm-chart/unit-test@$[[ component.reference ]]
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/helm-chart/unit-test@release/0.1
     inputs:
       enabled: $[[ inputs.unit_test_enabled ]]
       chart_dir: $[[ inputs.unit_test_chart_dir ]]
@@ -135,7 +135,7 @@ include:
       job_name_suffix: $[[ inputs.job_name_suffix ]]
 
   # --------------------------------------------------------------------------
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/helm-chart/push@$[[ component.reference ]]
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/helm-chart/push@release/0.1
     inputs:
       chart_dir: $[[ inputs.chart_dir ]]
       destination: $[[ inputs.push_destination ]]
