@@ -20,7 +20,7 @@ spec:
     stage:
       description: Assigns the Pipeline stage for this Job
       type: string
-      default: push
+      default: publish
 
     mode:
       description:  See templates/pipeline.yml
