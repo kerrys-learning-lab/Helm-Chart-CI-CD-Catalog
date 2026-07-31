@@ -13,7 +13,7 @@ include:
     - |
       # --- helm-unit-test ---------------------------------------------------
       mkdir -p ${JOB_ARTIFACTS_DIR}
-      helm unittest --file ${HELM_UNITTEST_FILE_GLOB}  \
+      helm unittest --file "${HELM_UNITTEST_FILE_GLOB}"  \
                     --output-type JUnit  \
                     --output-file ${JOB_ARTIFACTS_DIR}/unit-test-results.xml  \
                     ${HELM_CHART_DIR}

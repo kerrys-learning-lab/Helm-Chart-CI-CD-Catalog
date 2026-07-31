@@ -20,7 +20,7 @@ spec:
     stage:
       description: Assigns the Pipeline stage for this Job
       type: string
-      default: push
+      default: publish
 
     mode:
       description:  See templates/pipeline.yml
@@ -53,7 +53,7 @@ spec:
 
 # ============================================================================
 include:
-  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/defaults@main
+  - component: $CI_SERVER_FQDN/kerrys-learning-lab/devsecops/cicd-catalog/foundation/defaults@release/0.2
   - local: .push.gitlab-ci.yml
 
 

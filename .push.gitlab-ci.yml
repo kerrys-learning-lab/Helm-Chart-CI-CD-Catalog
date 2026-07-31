@@ -5,7 +5,7 @@ include:
 
 # ============================================================================
 .helm-push:
-  stage: push
+  stage: publish
   extends: .helm-base
   interruptible: false
   variables:
